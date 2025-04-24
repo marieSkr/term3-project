@@ -185,41 +185,6 @@ def skew_matrix(matrix, x_skew, y_skew):
     transformed_corners = [
         (int(x + y * x_skew), int(y + x * y_skew))
         for (x, y) in corners]
-    xs = [a[0] for a in transformed_corners]
-    ys = [a[1] for a in transformed_corners]
-
-    height2 = int(max(ys) - min(ys))
-    width2 = int(max(xs) - min(xs))
-
-    offset_x = int(min(xs))
-    offset_y = int(min(ys))
-
-    skewed_matrix = []
-
-    for y in range(height2):  # doing inverse-lookup so there are no holes
-        row = []
-        for x in range(width2):
-            # map new (x, y) to original image coordinates
-            x_skewed = int(math.floor(x - y * x_skew + offset_x))
-            y_skewed = int(math.floor(y - x * y_skew + offset_y))
-
-            if 0 <= x_skewed < width and 0 <= y_skewed < height:
-                row.append(matrix[y_skewed][x_skewed])
-            else:
-                row.append((255, 255, 255, 0))
-        skewed_matrix.append(row)
-
-    return skewed_matrix
-
-
-def skew_matrix2(matrix, x_skew, y_skew):  # working version
-    height = len(matrix)
-    width = len(matrix[0])
-
-    corners = [[0, 0], [width, 0], [width, height], [0, height]]
-    transformed_corners = [
-        (int(x + y * x_skew), int(y + x * y_skew))
-        for (x, y) in corners]
     xs = [pt[0] for pt in transformed_corners]
     ys = [pt[1] for pt in transformed_corners]
 
@@ -267,16 +232,14 @@ def scale_matrix(matrix, x_scale, y_scale):
 
 # ================
 
-#img = Image.open("me.png")
-img = Image.open("miku.png")
+img = Image.open("cody.png")
 
 img.show()
 
 img_matrix = image_to_matrix(img)
 #img_matrix2 = matrix_transpose(img_matrix)
 #img_matrix2 = rotate_matrix(img_matrix, 45)
-#img_matrix2 = skew_matrix(img_matrix, -0.4, -0.4)
-img_matrix2 = skew_matrix2(img_matrix, 0, 0.4)
+img_matrix2 = skew_matrix(img_matrix, -0.4, -0.4)
 #img_matrix2 = scale_matrix(img_matrix, 10, 10)
 
 img2 = matrix_to_image(img_matrix2)
