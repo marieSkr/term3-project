@@ -130,11 +130,13 @@ def image_to_matrix(img):
     return matrix
 
 
-def matrix_to_image(matrix):
+def matrix_to_image(matrix, mode):
     height = len(matrix)
     width = len(matrix[0])
-    img = Image.new("RGBA", (width, height))
-
+    if mode=="jpg":             #done to avoid saving RGBA images as jpgs and vice versa
+        img = Image.new("RGB", (width, height))
+    elif mode == "png":
+        img = Image.new("RGBA", (width, height))
     for y in range(height):
         for x in range(width):
             img.putpixel((x, y), matrix[y][x])
@@ -164,7 +166,6 @@ def bilinear_interpolation(x, y, matrix):
         X2 = matrix[y1][x0][i] * (1 - dx) + matrix[y1][x1][i] * dx # 2nd linear interpolation in x direction
         Y = X1 * (1 - dy) + X2 * dy # linear interpolation in y direction
         colors1.append(round(Y))
-    print(colors1)
     return tuple(colors1)
 
 
@@ -200,7 +201,7 @@ def rotate_matrix(matrix, angle_degrees, interpolation):
             orig_x = transformed[0][0] - offset_rotated[0][0]
             orig_y = transformed[1][0] + offset_rotated[1][0]
             if 0 <= orig_x < width and 0 <= -orig_y < height:
-                if interpolation == "nearest_neighbor":
+                if interpolation == "nearest neighbor":
                     row.append(matrix[int(-orig_y)][int(orig_x)]) # switching back to image coords
                 elif interpolation == "bilinear":
                     row.append(bilinear_interpolation(orig_x, -orig_y, matrix))
@@ -242,7 +243,7 @@ def skew_matrix(matrix, x_skew, y_skew, interpolation):
             y_skewed = transformed[1][0]
 
             if 0 <= x_skewed < width and 0 <= y_skewed < height:
-                if interpolation == "nearest_neighbor":
+                if interpolation == "nearest neighbor":
                     row.append(matrix[int(y_skewed)][int(x_skewed)])
                 elif interpolation == "bilinear":
                     row.append(bilinear_interpolation(x_skewed, y_skewed, matrix))
@@ -257,12 +258,12 @@ def scale_matrix(matrix, x_scale, y_scale, input_type, interpolation):
     height = len(matrix)
     width = len(matrix[0])
 
-    if input_type == "coefficients":
-        height2 = int(abs(height * y_scale))
-        width2 = int(abs(width * x_scale))
-    elif input_type == "dimensions":
-        height2 = abs(y_scale)
-        width2 = abs(x_scale)
+    if input_type == "set coefficients":
+        height2 = math.ceil(abs(height * y_scale))
+        width2 = math.ceil(abs(width * x_scale))
+    elif input_type == "set dimensions":
+        height2 = int(abs(y_scale))
+        width2 = int(abs(x_scale))
         x_scale = width2/width
         y_scale = height2/height
 
@@ -285,7 +286,7 @@ def scale_matrix(matrix, x_scale, y_scale, input_type, interpolation):
             else:
                 orig_y = height + transformed[1][0] - 1
 
-            if interpolation == "nearest_neighbor":
+            if interpolation == "nearest neighbor":
                 row.append(matrix[int(orig_y)][int(orig_x)])
             elif interpolation == "bilinear":
                 row.append(bilinear_interpolation(orig_x, orig_y, matrix))
@@ -304,7 +305,7 @@ def color_matrix(matrix, value_r, value_g, value_b): #value is from -1 to +1 in 
         row = []
         for x in range(width):
             # change the color of every pixel
-            r, g, b = matrix[y][x]
+            r, g, b = matrix[y][x][:3]
             if value_r >= 0:
                 new_r = r + round((255 - r) * value_r)
             else:
@@ -317,7 +318,11 @@ def color_matrix(matrix, value_r, value_g, value_b): #value is from -1 to +1 in 
                 new_b = b + round((255 - b) * value_b)
             else:
                 new_b = b + round(b * value_b)
-            row.append(tuple([new_r, new_g, new_b]))
+
+            if len(matrix[y][x]) == 3: #if image is RGB
+                row.append(tuple([new_r, new_g, new_b]))
+            else: #if image is RGBA
+                row.append(tuple([new_r, new_g, new_b, matrix[y][x][3]]))
 
         colored_matrix.append(row)
 
